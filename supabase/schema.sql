@@ -4,11 +4,10 @@
 
 create extension if not exists "pgcrypto";
 
-drop trigger if exists entries_updated on public.entries;
-drop function if exists public.set_updated_at();
 drop table if exists public.entries cascade;
 drop table if exists public.statuses cascade;
 drop table if exists public.niches cascade;
+drop function if exists public.set_updated_at();
 
 create table public.niches (
   id uuid primary key default gen_random_uuid(),
