@@ -6,6 +6,8 @@ import { getSupabase } from "@/lib/supabase";
 import type { Niche, Status } from "@/lib/types";
 import ThemeToggle from "@/components/ThemeToggle";
 
+export const dynamic = "force-dynamic";
+
 function slugify(s: string): string {
   return s
     .toLowerCase()

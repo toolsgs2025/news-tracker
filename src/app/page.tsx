@@ -7,6 +7,8 @@ import type { Niche } from "@/lib/types";
 import NicheSelector from "@/components/NicheSelector";
 import ThemeToggle from "@/components/ThemeToggle";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   const [niches, setNiches] = useState<Niche[] | null>(null);
   const [error, setError] = useState<string | null>(null);

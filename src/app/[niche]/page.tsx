@@ -9,6 +9,8 @@ import TrackerTable from "@/components/TrackerTable";
 import ThemeToggle from "@/components/ThemeToggle";
 import ResearcherBadge, { getResearcher } from "@/components/ResearcherBadge";
 
+export const dynamic = "force-dynamic";
+
 export default function NichePage({
   params,
 }: {
