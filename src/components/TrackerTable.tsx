@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
-import { bucketKey, type Bucket } from "@/lib/date";
+import { bucketKey, todayIso, type Bucket } from "@/lib/date";
 import type { Entry, Status } from "@/lib/types";
 import EditableCell from "./EditableCell";
 import KeywordChips from "./KeywordChips";
@@ -12,6 +12,7 @@ import FilterBar, { applyFilters, emptyFilters, type FilterState } from "./Filte
 
 type Props = {
   nicheId: string;
+  nicheSlug: string;
   statuses: Status[];
   entries: Entry[];
   onChange: () => void;
@@ -19,6 +20,7 @@ type Props = {
 
 export default function TrackerTable({
   nicheId,
+  nicheSlug,
   statuses,
   entries,
   onChange,
@@ -101,6 +103,83 @@ export default function TrackerTable({
     filters.from !== "" ||
     filters.to !== "";
 
+  function exportCsv() {
+    const statusMap = new Map(statuses.map((s) => [s.id, s.label]));
+    const header = [
+      "Date",
+      "Topic",
+      "Description",
+      "URL",
+      "Keywords",
+      "Status",
+      "Researcher",
+      "Source",
+      "Added",
+    ];
+    const data = sorted.map((e) => [
+      e.occurred_at ?? "",
+      e.topic ?? "",
+      e.description ?? "",
+      e.url,
+      (e.keywords ?? []).join(", "),
+      statusMap.get(e.status_id ?? "") ?? "",
+      e.researcher ?? "",
+      e.source_type ?? "",
+      e.created_at,
+    ]);
+    const csv = [header, ...data]
+      .map((row) => row.map(escapeCsv).join(","))
+      .join("\r\n");
+    const blob = new Blob(["﻿" + csv], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${nicheSlug}-news-${todayIso()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function copyForSheets() {
+    const statusMap = new Map(statuses.map((s) => [s.id, s.label]));
+    const header = [
+      "Date",
+      "Topic",
+      "Description",
+      "URL",
+      "Keywords",
+      "Status",
+      "Researcher",
+      "Source",
+      "Added",
+    ];
+    const data = sorted.map((e) => [
+      e.occurred_at ?? "",
+      e.topic ?? "",
+      e.description ?? "",
+      e.url,
+      (e.keywords ?? []).join(", "),
+      statusMap.get(e.status_id ?? "") ?? "",
+      e.researcher ?? "",
+      e.source_type ?? "",
+      e.created_at,
+    ]);
+    const tsv = [header, ...data]
+      .map((row) => row.map((c) => String(c ?? "").replace(/[\t\r\n]/g, " ")).join("\t"))
+      .join("\n");
+    try {
+      await navigator.clipboard.writeText(tsv);
+      alert(
+        `Copied ${data.length} rows. Paste into a Google Sheet (the header is included).`
+      );
+    } catch {
+      alert("Couldn't access clipboard. Try the CSV download instead.");
+    }
+  }
+
   return (
     <div className="space-y-3">
       <FilterBar
@@ -121,10 +200,28 @@ export default function TrackerTable({
             setBucket(n.bucket);
           }}
         />
-        <div className="text-sm text-dim">
-          {filterActive
-            ? `${filtered.length} of ${entries.length} entries`
-            : `${entries.length} entries`}
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-dim">
+            {filterActive
+              ? `${filtered.length} of ${entries.length} entries`
+              : `${entries.length} entries`}
+          </div>
+          <button
+            onClick={copyForSheets}
+            disabled={sorted.length === 0}
+            className="btn-ghost text-sm"
+            title="Copy filtered rows as TSV — paste directly into a Google Sheet"
+          >
+            📋 Copy for Sheets
+          </button>
+          <button
+            onClick={exportCsv}
+            disabled={sorted.length === 0}
+            className="btn-primary text-sm"
+            title="Download filtered rows as CSV (open with Google Sheets)"
+          >
+            ⬇ Export CSV
+          </button>
         </div>
       </div>
 
@@ -270,6 +367,12 @@ function GroupRows({
       ))}
     </>
   );
+}
+
+function escapeCsv(v: unknown): string {
+  const s = String(v ?? "");
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
 
 function shortUrl(u: string): string {

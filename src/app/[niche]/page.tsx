@@ -166,6 +166,7 @@ export default function NichePage({
       {niche && (
         <TrackerTable
           nicheId={niche.id}
+          nicheSlug={niche.slug}
           statuses={statuses}
           entries={entries}
           onChange={() => reloadEntries(niche.id)}
