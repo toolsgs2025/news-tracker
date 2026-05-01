@@ -1,17 +1,8 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
 import type { ExtractResult, SourceType } from "./types";
 
-const MODEL = "claude-haiku-4-5";
-
-let _client: Anthropic | null = null;
-function client(): Anthropic {
-  if (_client) return _client;
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error("Missing ANTHROPIC_API_KEY in environment");
-  _client = new Anthropic({ apiKey: key });
-  return _client;
-}
+const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 export function detectSourceType(url: string): SourceType {
   try {
@@ -166,6 +157,44 @@ function safeJsonExtract(text: string): unknown {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
+async function callOpenRouter(userMessage: string): Promise<string> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("Missing OPENROUTER_API_KEY in environment");
+  const model = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.OPENROUTER_REFERER || "https://news-tracker.local",
+      "X-Title": "News Tracker",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 600,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: userMessage },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`OpenRouter ${res.status}: ${detail.slice(0, 500)}`);
+  }
+
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenRouter returned no content");
+  return content;
+}
+
 export async function extractFromUrl(url: string): Promise<ExtractResult> {
   const source = detectSourceType(url);
   const ctx = await fetchPageContext(url, source);
@@ -180,22 +209,9 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
     page_snippet: ctx.rawSnippet,
   };
 
-  const msg = await client().messages.create({
-    model: MODEL,
-    max_tokens: 600,
-    system: SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: `Context JSON:\n${JSON.stringify(userPayload, null, 2)}\n\nReturn JSON only.`,
-      },
-    ],
-  });
-
-  const textBlock = msg.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Claude returned no text");
-  }
+  const text = await callOpenRouter(
+    `Context JSON:\n${JSON.stringify(userPayload, null, 2)}\n\nReturn JSON only.`
+  );
 
   let parsed: {
     topic?: string | null;
@@ -204,7 +220,7 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
     keywords?: unknown;
   };
   try {
-    parsed = safeJsonExtract(textBlock.text) as typeof parsed;
+    parsed = safeJsonExtract(text) as typeof parsed;
   } catch {
     return {
       topic: ctx.title,
@@ -212,7 +228,7 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
       occurred_at: ctx.ogPublished ? ctx.ogPublished.slice(0, 10) : null,
       keywords: [],
       source_type: source,
-      ai_raw: { error: "parse_failed", raw: textBlock.text },
+      ai_raw: { error: "parse_failed", raw: text },
     };
   }
 
@@ -236,6 +252,6 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
     occurred_at: occurred,
     keywords,
     source_type: source,
-    ai_raw: { context: ctx, model_output: textBlock.text },
+    ai_raw: { context: ctx, model_output: text },
   };
 }

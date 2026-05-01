@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractFromUrl } from "@/lib/anthropic";
+import { extractFromUrl } from "@/lib/extractor";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
