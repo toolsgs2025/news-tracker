@@ -8,6 +8,7 @@ import EditableCell from "./EditableCell";
 import KeywordChips from "./KeywordChips";
 import StatusDropdown from "./StatusDropdown";
 import SortControls, { SortDir, SortField } from "./SortControls";
+import FilterBar, { applyFilters, emptyFilters, type FilterState } from "./FilterBar";
 
 type Props = {
   nicheId: string;
@@ -26,6 +27,7 @@ export default function TrackerTable({
   const [field, setField] = useState<SortField>("occurred_at");
   const [dir, setDir] = useState<SortDir>("desc");
   const [bucket, setBucket] = useState<Bucket>("none");
+  const [filters, setFilters] = useState<FilterState>(emptyFilters);
 
   // realtime subscribe
   useEffect(() => {
@@ -60,9 +62,11 @@ export default function TrackerTable({
     onChange();
   }
 
+  const filtered = useMemo(() => applyFilters(entries, filters), [entries, filters]);
+
   const sorted = useMemo(() => {
     const statusOrder = new Map(statuses.map((s) => [s.id, s.sort_order]));
-    const arr = [...entries];
+    const arr = [...filtered];
     arr.sort((a, b) => {
       const mul = dir === "asc" ? 1 : -1;
       if (field === "topic") {
@@ -78,7 +82,7 @@ export default function TrackerTable({
       return mul * (aDate < bDate ? -1 : aDate > bDate ? 1 : 0);
     });
     return arr;
-  }, [entries, field, dir, statuses]);
+  }, [filtered, field, dir, statuses]);
 
   const groups = useMemo(() => {
     if (bucket === "none") return [{ key: "", items: sorted }];
@@ -91,8 +95,21 @@ export default function TrackerTable({
     return Array.from(map.entries()).map(([key, items]) => ({ key, items }));
   }, [sorted, bucket]);
 
+  const filterActive =
+    filters.month !== "all" ||
+    filters.statusIds.length > 0 ||
+    filters.from !== "" ||
+    filters.to !== "";
+
   return (
     <div className="space-y-3">
+      <FilterBar
+        entries={entries}
+        statuses={statuses}
+        value={filters}
+        onChange={setFilters}
+      />
+
       <div className="glass p-3 flex flex-wrap items-center justify-between gap-2">
         <SortControls
           field={field}
@@ -104,22 +121,36 @@ export default function TrackerTable({
             setBucket(n.bucket);
           }}
         />
-        <div className="text-sm text-dim">{entries.length} entries</div>
+        <div className="text-sm text-dim">
+          {filterActive
+            ? `${filtered.length} of ${entries.length} entries`
+            : `${entries.length} entries`}
+        </div>
       </div>
 
       <div className="glass overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-[7rem]" />
+              <col className="w-[16rem]" />
+              <col />
+              <col className="w-[10rem]" />
+              <col className="w-[11rem]" />
+              <col className="w-[9.5rem]" />
+              <col className="w-[7rem]" />
+              <col className="w-[2.5rem]" />
+            </colgroup>
             <thead>
               <tr className="text-left text-dim border-b border-white/10">
-                <th className="px-3 py-2 font-medium w-28">Date</th>
-                <th className="px-3 py-2 font-medium w-56">Topic</th>
+                <th className="px-3 py-2 font-medium">Date</th>
+                <th className="px-3 py-2 font-medium">Topic</th>
                 <th className="px-3 py-2 font-medium">Description</th>
-                <th className="px-3 py-2 font-medium w-48">Link</th>
-                <th className="px-3 py-2 font-medium w-56">Keywords</th>
-                <th className="px-3 py-2 font-medium w-44">Status</th>
-                <th className="px-3 py-2 font-medium w-32">Researcher</th>
-                <th className="px-3 py-2 font-medium w-12"></th>
+                <th className="px-3 py-2 font-medium">Link</th>
+                <th className="px-3 py-2 font-medium">Keywords</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Researcher</th>
+                <th className="px-3 py-2 font-medium"></th>
               </tr>
             </thead>
             <tbody>
@@ -132,10 +163,12 @@ export default function TrackerTable({
                   remove={remove}
                 />
               ))}
-              {entries.length === 0 && (
+              {filtered.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center py-10 text-dim">
-                    No entries yet. Paste a URL above to get started.
+                    {entries.length === 0
+                      ? "No entries yet. Paste a URL above to get started."
+                      : "No entries match the current filters."}
                   </td>
                 </tr>
               )}
@@ -242,7 +275,7 @@ function GroupRows({
 function shortUrl(u: string): string {
   try {
     const url = new URL(u);
-    const path = url.pathname.length > 24 ? url.pathname.slice(0, 24) + "…" : url.pathname;
+    const path = url.pathname.length > 18 ? url.pathname.slice(0, 18) + "…" : url.pathname;
     return `${url.hostname.replace(/^www\./, "")}${path}`;
   } catch {
     return u;
