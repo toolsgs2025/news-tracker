@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Entry, Status } from "@/lib/types";
 
 export type FilterState = {
+  query: string;
   month: string; // "all" | "YYYY-MM"
   statusIds: string[]; // empty = all
   from: string; // "" | "YYYY-MM-DD"
@@ -11,6 +12,7 @@ export type FilterState = {
 };
 
 export const emptyFilters: FilterState = {
+  query: "",
   month: "all",
   statusIds: [],
   from: "",
@@ -59,94 +61,103 @@ export default function FilterBar({
   }
 
   const filterActive =
+    value.query !== "" ||
     value.month !== "all" ||
     value.statusIds.length > 0 ||
     value.from !== "" ||
     value.to !== "";
 
   return (
-    <div className="glass p-4 space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-dim text-sm">Month</span>
-          <select
-            value={value.month}
-            onChange={(e) => onChange({ ...value, month: e.target.value })}
-            className="glass-input py-1 text-sm"
-          >
-            <option value="all">All months</option>
-            {monthOptions.map((m) => (
-              <option key={m} value={m}>
-                {monthLabel(m)}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="space-y-3 text-sm">
+      <div>
+        <label className="block text-dim text-xs mb-1">Search</label>
+        <input
+          type="search"
+          value={value.query}
+          onChange={(e) => onChange({ ...value, query: e.target.value })}
+          placeholder="topic, keywords, url…"
+          className="glass-input py-1.5 text-sm w-full"
+        />
+      </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-dim text-sm">From</span>
+      <div>
+        <label className="block text-dim text-xs mb-1">Month</label>
+        <select
+          value={value.month}
+          onChange={(e) => onChange({ ...value, month: e.target.value })}
+          className="glass-input py-1.5 text-sm w-full"
+        >
+          <option value="all">All months</option>
+          {monthOptions.map((m) => (
+            <option key={m} value={m}>
+              {monthLabel(m)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="block text-dim text-xs mb-1">From</label>
           <input
             type="date"
             value={value.from}
             onChange={(e) => onChange({ ...value, from: e.target.value })}
-            className="glass-input py-1 text-sm w-[10.5rem]"
+            className="glass-input py-1.5 text-sm w-full"
           />
-          <span className="text-dim text-sm">To</span>
+        </div>
+        <div>
+          <label className="block text-dim text-xs mb-1">To</label>
           <input
             type="date"
             value={value.to}
             onChange={(e) => onChange({ ...value, to: e.target.value })}
-            className="glass-input py-1 text-sm w-[10.5rem]"
+            className="glass-input py-1.5 text-sm w-full"
           />
         </div>
-
-        {filterActive && (
-          <button
-            onClick={() => onChange(emptyFilters)}
-            className="btn-ghost text-sm ml-auto"
-          >
-            Clear filters
-          </button>
-        )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-dim text-sm mr-1">Status</span>
-        {statuses.map((s) => {
-          const active = value.statusIds.includes(s.id);
-          return (
-            <button
-              key={s.id}
-              onClick={() => toggleStatus(s.id)}
-              className="chip transition"
-              style={{
-                background: active ? `${s.color}33` : undefined,
-                borderColor: active ? `${s.color}aa` : undefined,
-                opacity: value.statusIds.length === 0 || active ? 1 : 0.45,
-              }}
-            >
-              <span
-                className="inline-block w-2 h-2 rounded-full mr-1"
-                style={{ background: s.color }}
-              />
-              {s.label}
-            </button>
-          );
-        })}
-        {value.statusIds.length > 0 && (
-          <button
-            onClick={() => onChange({ ...value, statusIds: [] })}
-            className="text-xs text-dim hover:underline ml-1"
-          >
-            reset
-          </button>
-        )}
+      <div>
+        <label className="block text-dim text-xs mb-1">Status</label>
+        <div className="flex flex-wrap gap-1">
+          {statuses.map((s) => {
+            const active = value.statusIds.includes(s.id);
+            return (
+              <button
+                key={s.id}
+                onClick={() => toggleStatus(s.id)}
+                className="chip transition"
+                style={{
+                  background: active ? `${s.color}33` : undefined,
+                  borderColor: active ? `${s.color}aa` : undefined,
+                  opacity: value.statusIds.length === 0 || active ? 1 : 0.4,
+                }}
+              >
+                <span
+                  className="inline-block w-2 h-2 rounded-full mr-1"
+                  style={{ background: s.color }}
+                />
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {filterActive && (
+        <button
+          onClick={() => onChange(emptyFilters)}
+          className="btn-ghost text-xs w-full"
+        >
+          Clear all filters
+        </button>
+      )}
     </div>
   );
 }
 
 export function applyFilters(entries: Entry[], f: FilterState): Entry[] {
+  const q = f.query.trim().toLowerCase();
   return entries.filter((e) => {
     const date = e.occurred_at ?? e.created_at.slice(0, 10);
     if (f.month !== "all" && (date ?? "").slice(0, 7) !== f.month) return false;
@@ -154,6 +165,18 @@ export function applyFilters(entries: Entry[], f: FilterState): Entry[] {
     if (f.to && date > f.to) return false;
     if (f.statusIds.length > 0 && !f.statusIds.includes(e.status_id ?? ""))
       return false;
+    if (q) {
+      const hay = [
+        e.topic ?? "",
+        e.description ?? "",
+        e.url,
+        e.researcher ?? "",
+        (e.keywords ?? []).join(" "),
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 }

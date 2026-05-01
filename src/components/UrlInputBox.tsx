@@ -33,10 +33,7 @@ export default function UrlInputBox({ onSubmit }: Props) {
   }
 
   return (
-    <div className="glass-strong p-4 sm:p-5">
-      <label className="text-sm text-dim mb-2 block">
-        Paste a URL — tweet, article, or Instagram reel. AI will fill in the rest.
-      </label>
+    <div className="glass-strong p-3">
       <div className="flex gap-2">
         <input
           value={url}
@@ -44,7 +41,7 @@ export default function UrlInputBox({ onSubmit }: Props) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !busy) submit();
           }}
-          placeholder="https://x.com/..."
+          placeholder="Paste a URL — tweet, article, or Instagram reel…"
           className="glass-input flex-1"
           disabled={busy}
         />
@@ -56,9 +53,7 @@ export default function UrlInputBox({ onSubmit }: Props) {
           {busy ? "Extracting…" : "Extract"}
         </button>
       </div>
-      {error && (
-        <p className="text-sm mt-2 text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm mt-2 text-red-400">{error}</p>}
     </div>
   );
 }
