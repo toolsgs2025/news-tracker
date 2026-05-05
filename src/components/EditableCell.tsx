@@ -9,6 +9,7 @@ type Props = {
   multiline?: boolean;
   type?: "text" | "date" | "url";
   className?: string;
+  displayFormatter?: (value: string | null) => string;
 };
 
 export default function EditableCell({
@@ -18,6 +19,7 @@ export default function EditableCell({
   multiline = false,
   type = "text",
   className = "",
+  displayFormatter,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
@@ -47,17 +49,19 @@ export default function EditableCell({
   }
 
   if (!editing) {
+    const display = displayFormatter ? displayFormatter(value) : value;
+    const isEmpty = display == null || display === "" || display === "—";
     return (
       <button
         onClick={() => setEditing(true)}
         className={`text-left w-full block px-1 py-1 rounded hover:bg-white/5 transition ${className}`}
         title="Click to edit"
       >
-        {value ? (
+        {!isEmpty ? (
           type === "url" ? (
-            <span className="break-all">{value}</span>
+            <span className="break-all">{display}</span>
           ) : (
-            <span className="whitespace-pre-wrap">{value}</span>
+            <span className="whitespace-pre-wrap">{display}</span>
           )
         ) : (
           <span className="text-dim italic">{placeholder}</span>

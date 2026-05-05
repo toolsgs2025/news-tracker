@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo } from "react";
 import { getSupabase } from "@/lib/supabase";
-import { bucketKey, type Bucket } from "@/lib/date";
+import {
+  bucketKey,
+  formatDateDMY,
+  weekId,
+  weekOfMonthLabel,
+  type Bucket,
+} from "@/lib/date";
 import type { Entry, Status } from "@/lib/types";
 import EditableCell from "./EditableCell";
 import StatusDropdown from "./StatusDropdown";
@@ -103,6 +109,7 @@ export default function TrackerTable({
                 key={group.key || "all"}
                 group={group}
                 statuses={statuses}
+                bucket={bucket}
                 update={update}
                 remove={remove}
               />
@@ -124,15 +131,20 @@ export default function TrackerTable({
 function GroupRows({
   group,
   statuses,
+  bucket,
   update,
   remove,
 }: {
   group: { key: string; items: Entry[] };
   statuses: Status[];
+  bucket: Bucket;
   update: (id: string, patch: Partial<Entry>) => Promise<void>;
   remove: (id: string) => Promise<void>;
 }) {
   const rowBorder = "rgb(var(--border) / var(--border-a))";
+  // Inject auto week separators when not already grouped by week.
+  const showWeekBreaks = bucket !== "week";
+  let lastWeek: string | null = null;
   return (
     <>
       {group.key && (
@@ -146,17 +158,75 @@ function GroupRows({
           </td>
         </tr>
       )}
-      {group.items.map((e) => (
-        <tr
-          key={e.id}
-          className="row-hover align-top border-b"
-          style={{ borderColor: rowBorder }}
-        >
+      {group.items.map((e) => {
+        const wk = showWeekBreaks ? weekId(e.occurred_at) : null;
+        const isNewWeek = showWeekBreaks && wk !== lastWeek;
+        const isFirstOfGroup = lastWeek === null;
+        if (showWeekBreaks) lastWeek = wk;
+        return (
+          <WeekRow
+            key={e.id}
+            entry={e}
+            statuses={statuses}
+            update={update}
+            remove={remove}
+            rowBorder={rowBorder}
+            showSeparator={isNewWeek && !isFirstOfGroup}
+            separatorLabel={isNewWeek ? weekOfMonthLabel(e.occurred_at) : ""}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function WeekRow({
+  entry: e,
+  statuses,
+  update,
+  remove,
+  rowBorder,
+  showSeparator,
+  separatorLabel,
+}: {
+  entry: Entry;
+  statuses: Status[];
+  update: (id: string, patch: Partial<Entry>) => Promise<void>;
+  remove: (id: string) => Promise<void>;
+  rowBorder: string;
+  showSeparator: boolean;
+  separatorLabel: string;
+}) {
+  return (
+    <>
+      {showSeparator && (
+        <tr aria-hidden>
+          <td colSpan={7} className="p-0">
+            <div className="flex items-center gap-2 px-3 py-2 mt-1 text-[11px] uppercase tracking-wide text-dim">
+              <span
+                className="flex-1 h-px"
+                style={{ background: "rgb(var(--border) / var(--border-a))" }}
+              />
+              <span>{separatorLabel}</span>
+              <span
+                className="flex-1 h-px"
+                style={{ background: "rgb(var(--border) / var(--border-a))" }}
+              />
+            </div>
+          </td>
+        </tr>
+      )}
+      <tr
+        key={e.id}
+        className="row-hover align-top border-b"
+        style={{ borderColor: rowBorder }}
+      >
           <td className="px-3 py-2">
             <EditableCell
               value={e.occurred_at}
               type="date"
               placeholder="—"
+              displayFormatter={formatDateDMY}
               onSave={(v) => update(e.id, { occurred_at: v })}
             />
           </td>
@@ -166,7 +236,7 @@ function GroupRows({
               placeholder="topic…"
               onSave={(v) => update(e.id, { topic: v })}
             />
-            <CompanyIcons companies={e.companies ?? []} />
+            <CompanyIcons sourceUrl={e.url} companies={e.companies ?? []} />
           </td>
           <td className="px-3 py-2">
             <EditableCell
@@ -210,11 +280,10 @@ function GroupRows({
               aria-label="Delete"
               title="Delete"
             >
-              🗑
-            </button>
-          </td>
-        </tr>
-      ))}
+            🗑
+          </button>
+        </td>
+      </tr>
     </>
   );
 }

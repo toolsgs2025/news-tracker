@@ -3,27 +3,52 @@
 import { useState } from "react";
 
 type Props = {
+  sourceUrl?: string | null;
   companies: string[];
   size?: number;
 };
 
-export default function CompanyIcons({ companies, size = 14 }: Props) {
-  if (!companies || companies.length === 0) return null;
+export default function CompanyIcons({
+  sourceUrl,
+  companies,
+  size = 14,
+}: Props) {
+  const sourceDomain = sourceUrl ? domainFromUrl(sourceUrl) : null;
+  const merged: string[] = [];
+  if (sourceDomain) merged.push(sourceDomain);
+  for (const c of companies ?? []) {
+    if (c && c !== sourceDomain && !merged.includes(c)) merged.push(c);
+  }
+  if (merged.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-1 mt-1">
-      {companies.map((domain) => (
-        <CompanyIcon key={domain} domain={domain} size={size} />
+      {merged.map((domain, i) => (
+        <CompanyIcon
+          key={domain}
+          domain={domain}
+          size={size}
+          isSource={i === 0 && !!sourceDomain}
+        />
       ))}
     </div>
   );
 }
 
-function CompanyIcon({ domain, size }: { domain: string; size: number }) {
+function CompanyIcon({
+  domain,
+  size,
+  isSource,
+}: {
+  domain: string;
+  size: number;
+  isSource: boolean;
+}) {
   const [failed, setFailed] = useState(false);
+  const title = isSource ? `Source: ${domain}` : domain;
   if (failed) {
     return (
       <span
-        title={domain}
+        title={title}
         className="inline-flex items-center justify-center rounded text-[9px] font-medium uppercase"
         style={{
           width: size,
@@ -43,7 +68,7 @@ function CompanyIcon({ domain, size }: { domain: string; size: number }) {
         domain
       )}&sz=64`}
       alt={domain}
-      title={domain}
+      title={title}
       width={size}
       height={size}
       onError={() => setFailed(true)}
@@ -52,4 +77,12 @@ function CompanyIcon({ domain, size }: { domain: string; size: number }) {
       loading="lazy"
     />
   );
+}
+
+function domainFromUrl(url: string): string | null {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
