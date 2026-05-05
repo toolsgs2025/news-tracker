@@ -6,7 +6,7 @@ import type { Niche } from "@/lib/types";
 export default function NicheSelector({ niches }: { niches: Niche[] }) {
   if (niches.length === 0) {
     return (
-      <div className="glass p-6 text-center">
+      <div className="card p-6 text-center">
         <p className="text-dim mb-3">No niches yet.</p>
         <Link href="/admin" className="btn-primary inline-block">
           Create your first niche
@@ -21,10 +21,7 @@ export default function NicheSelector({ niches }: { niches: Niche[] }) {
         <Link
           key={n.id}
           href={`/${n.slug}`}
-          className="glass p-6 hover:scale-[1.02] transition-transform relative overflow-hidden block"
-          style={{
-            backgroundImage: `linear-gradient(135deg, ${n.color}33, transparent 70%)`,
-          }}
+          className="card p-6 hover:-translate-y-0.5 transition-transform relative overflow-hidden block"
         >
           <div
             className="w-3 h-3 rounded-full mb-3"

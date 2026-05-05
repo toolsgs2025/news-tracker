@@ -80,7 +80,7 @@ export default function EditableCell({
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit();
         }}
         rows={3}
-        className={`glass-input text-sm resize-y ${className}`}
+        className={`input text-sm resize-y ${className}`}
         placeholder={placeholder}
       />
     );
@@ -99,7 +99,7 @@ export default function EditableCell({
         if (e.key === "Escape") cancel();
         if (e.key === "Enter") commit();
       }}
-      className={`glass-input text-sm ${className}`}
+      className={`input text-sm ${className}`}
       placeholder={placeholder}
     />
   );

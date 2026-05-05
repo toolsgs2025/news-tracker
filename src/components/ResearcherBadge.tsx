@@ -45,7 +45,7 @@ export default function ResearcherBadge() {
           if (e.key === "Escape") setEditing(false);
         }}
         placeholder="Your name"
-        className="glass-input text-sm w-40"
+        className="input text-sm w-40"
       />
     );
   }

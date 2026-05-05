@@ -76,7 +76,7 @@ export default function FilterBar({
           value={value.query}
           onChange={(e) => onChange({ ...value, query: e.target.value })}
           placeholder="topic, keywords, url…"
-          className="glass-input py-1.5 text-sm w-full"
+          className="input py-1.5 text-sm w-full"
         />
       </div>
 
@@ -85,7 +85,7 @@ export default function FilterBar({
         <select
           value={value.month}
           onChange={(e) => onChange({ ...value, month: e.target.value })}
-          className="glass-input py-1.5 text-sm w-full"
+          className="input py-1.5 text-sm w-full"
         >
           <option value="all">All months</option>
           {monthOptions.map((m) => (
@@ -103,7 +103,7 @@ export default function FilterBar({
             type="date"
             value={value.from}
             onChange={(e) => onChange({ ...value, from: e.target.value })}
-            className="glass-input py-1.5 text-sm w-full"
+            className="input py-1.5 text-sm w-full"
           />
         </div>
         <div>
@@ -112,7 +112,7 @@ export default function FilterBar({
             type="date"
             value={value.to}
             onChange={(e) => onChange({ ...value, to: e.target.value })}
-            className="glass-input py-1.5 text-sm w-full"
+            className="input py-1.5 text-sm w-full"
           />
         </div>
       </div>

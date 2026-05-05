@@ -19,7 +19,7 @@ export default function StatusDropdown({ statuses, value, onChange }: Props) {
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="glass-input text-sm pl-7 pr-7 appearance-none cursor-pointer"
+        className="input text-sm pl-7 pr-7 appearance-none cursor-pointer"
       >
         <option value="">—</option>
         {statuses.map((s) => (

@@ -35,6 +35,7 @@ create table public.entries (
   description text,
   occurred_at date,
   keywords text[] default '{}',
+  companies text[] default '{}',
   status_id uuid references public.statuses(id) on delete set null,
   researcher text,
   source_type text,

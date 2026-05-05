@@ -26,6 +26,7 @@ export type Entry = {
   description: string | null;
   occurred_at: string | null;
   keywords: string[];
+  companies: string[];
   status_id: string | null;
   researcher: string | null;
   source_type: SourceType | null;
@@ -39,6 +40,7 @@ export type ExtractResult = {
   description: string | null;
   occurred_at: string | null;
   keywords: string[];
+  companies: string[];
   source_type: SourceType;
   ai_raw?: unknown;
 };

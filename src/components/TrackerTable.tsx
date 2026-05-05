@@ -5,8 +5,8 @@ import { getSupabase } from "@/lib/supabase";
 import { bucketKey, type Bucket } from "@/lib/date";
 import type { Entry, Status } from "@/lib/types";
 import EditableCell from "./EditableCell";
-import KeywordChips from "./KeywordChips";
 import StatusDropdown from "./StatusDropdown";
+import CompanyIcons from "./CompanyIcons";
 
 type Props = {
   nicheId: string;
@@ -71,26 +71,27 @@ export default function TrackerTable({
   }, [rows, bucket]);
 
   return (
-    <div className="glass overflow-hidden">
+    <div className="card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm table-fixed">
           <colgroup>
             <col className="w-[7rem]" />
-            <col className="w-[16rem]" />
+            <col className="w-[18rem]" />
             <col />
             <col className="w-[10rem]" />
-            <col className="w-[11rem]" />
             <col className="w-[9.5rem]" />
             <col className="w-[7rem]" />
             <col className="w-[2.5rem]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-dim border-b border-white/10">
+            <tr
+              className="text-left text-dim border-b"
+              style={{ borderColor: "rgb(var(--border) / var(--border-a))" }}
+            >
               <th className="px-3 py-2 font-medium">Date</th>
               <th className="px-3 py-2 font-medium">Topic</th>
               <th className="px-3 py-2 font-medium">Description</th>
               <th className="px-3 py-2 font-medium">Link</th>
-              <th className="px-3 py-2 font-medium">Keywords</th>
               <th className="px-3 py-2 font-medium">Status</th>
               <th className="px-3 py-2 font-medium">Researcher</th>
               <th className="px-3 py-2 font-medium"></th>
@@ -108,7 +109,7 @@ export default function TrackerTable({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center py-10 text-dim">
+                <td colSpan={7} className="text-center py-10 text-dim">
                   {emptyMessage}
                 </td>
               </tr>
@@ -131,18 +132,26 @@ function GroupRows({
   update: (id: string, patch: Partial<Entry>) => Promise<void>;
   remove: (id: string) => Promise<void>;
 }) {
+  const rowBorder = "rgb(var(--border) / var(--border-a))";
   return (
     <>
       {group.key && (
-        <tr className="bg-white/[0.03]">
-          <td colSpan={8} className="px-3 py-1.5 text-xs uppercase tracking-wide text-dim">
+        <tr style={{ background: "rgb(var(--border) / 0.04)" }}>
+          <td
+            colSpan={7}
+            className="px-3 py-1.5 text-xs uppercase tracking-wide text-dim"
+          >
             {group.key}{" "}
             <span className="ml-2 normal-case">({group.items.length})</span>
           </td>
         </tr>
       )}
       {group.items.map((e) => (
-        <tr key={e.id} className="row-hover border-b border-white/5 align-top">
+        <tr
+          key={e.id}
+          className="row-hover align-top border-b"
+          style={{ borderColor: rowBorder }}
+        >
           <td className="px-3 py-2">
             <EditableCell
               value={e.occurred_at}
@@ -157,6 +166,7 @@ function GroupRows({
               placeholder="topic…"
               onSave={(v) => update(e.id, { topic: v })}
             />
+            <CompanyIcons companies={e.companies ?? []} />
           </td>
           <td className="px-3 py-2">
             <EditableCell
@@ -171,17 +181,12 @@ function GroupRows({
               href={e.url}
               target="_blank"
               rel="noreferrer"
-              className="break-all text-indigo-300 hover:underline"
+              className="break-all hover:underline"
+              style={{ color: "rgb(var(--accent))" }}
               title={e.url}
             >
               {shortUrl(e.url)}
             </a>
-          </td>
-          <td className="px-3 py-2">
-            <KeywordChips
-              keywords={e.keywords ?? []}
-              onChange={(next) => update(e.id, { keywords: next })}
-            />
           </td>
           <td className="px-3 py-2">
             <StatusDropdown
@@ -191,11 +196,12 @@ function GroupRows({
             />
           </td>
           <td className="px-3 py-2">
-            <EditableCell
-              value={e.researcher}
-              placeholder="—"
-              onSave={(v) => update(e.id, { researcher: v })}
-            />
+            <span
+              className="text-sm"
+              title="Researcher who added this entry (locked)"
+            >
+              {e.researcher || <span className="text-dim italic">—</span>}
+            </span>
           </td>
           <td className="px-3 py-2">
             <button

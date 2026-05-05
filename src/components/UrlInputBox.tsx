@@ -33,7 +33,7 @@ export default function UrlInputBox({ onSubmit }: Props) {
   }
 
   return (
-    <div className="glass-strong p-3">
+    <div className="card-strong p-3">
       <div className="flex gap-2">
         <input
           value={url}
@@ -42,7 +42,7 @@ export default function UrlInputBox({ onSubmit }: Props) {
             if (e.key === "Enter" && !busy) submit();
           }}
           placeholder="Paste a URL — tweet, article, or Instagram reel…"
-          className="glass-input flex-1"
+          className="input flex-1"
           disabled={busy}
         />
         <button

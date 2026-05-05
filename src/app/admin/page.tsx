@@ -129,9 +129,9 @@ export default function AdminPage() {
         <ThemeToggle />
       </header>
 
-      {error && <div className="glass p-3 text-sm text-red-300">{error}</div>}
+      {error && <div className="card p-3 text-sm text-red-300">{error}</div>}
 
-      <section className="glass p-5">
+      <section className="card p-5">
         <h2 className="text-lg font-medium mb-4">Niches</h2>
         <div className="space-y-2 mb-4">
           {niches.map((n) => (
@@ -153,7 +153,7 @@ export default function AdminPage() {
                   if (name && name !== n.name)
                     updateNiche(n.id, { name, slug: slugify(name) });
                 }}
-                className="glass-input flex-1 min-w-[12rem]"
+                className="input flex-1 min-w-[12rem]"
               />
               <span className="text-dim text-sm">/{n.slug}</span>
               <button
@@ -180,7 +180,7 @@ export default function AdminPage() {
             onChange={(e) => setNewNiche(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addNiche()}
             placeholder="New niche name"
-            className="glass-input flex-1 min-w-[12rem]"
+            className="input flex-1 min-w-[12rem]"
           />
           <button onClick={addNiche} className="btn-primary">
             Add niche
@@ -188,7 +188,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="glass p-5">
+      <section className="card p-5">
         <h2 className="text-lg font-medium mb-4">Statuses</h2>
         <p className="text-dim text-sm mb-3">
           The default status is auto-applied to newly extracted entries.
@@ -211,7 +211,7 @@ export default function AdminPage() {
                   const label = e.target.value.trim();
                   if (label && label !== s.label) updateStatus(s.id, { label });
                 }}
-                className="glass-input flex-1 min-w-[12rem]"
+                className="input flex-1 min-w-[12rem]"
               />
               <button
                 onClick={() => setDefaultStatus(s.id)}
@@ -244,7 +244,7 @@ export default function AdminPage() {
             onChange={(e) => setNewStatus(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addStatus()}
             placeholder="New status label"
-            className="glass-input flex-1 min-w-[12rem]"
+            className="input flex-1 min-w-[12rem]"
           />
           <button onClick={addStatus} className="btn-primary">
             Add status

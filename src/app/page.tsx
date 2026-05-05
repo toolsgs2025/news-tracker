@@ -53,7 +53,7 @@ export default function Home() {
       </header>
 
       {error && (
-        <div className="glass p-4 text-sm text-red-300">
+        <div className="card p-4 text-sm text-red-300">
           Failed to load niches: {error}
           <p className="text-dim mt-2">
             Did you run <code>supabase/schema.sql</code> and set{" "}
@@ -63,7 +63,7 @@ export default function Home() {
       )}
 
       {niches === null && !error && (
-        <div className="glass p-6 text-dim">Loading…</div>
+        <div className="card p-6 text-dim">Loading…</div>
       )}
 
       {niches && <NicheSelector niches={niches} />}

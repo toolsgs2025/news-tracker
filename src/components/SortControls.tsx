@@ -23,7 +23,7 @@ export default function SortControls({ field, dir, bucket, onChange }: Props) {
             onChange={(e) =>
               onChange({ field: e.target.value as SortField, dir, bucket })
             }
-            className="glass-input py-1.5 text-sm flex-1 min-w-0"
+            className="input py-1.5 text-sm flex-1 min-w-0"
           >
             <option value="occurred_at">Date occurred</option>
             <option value="created_at">Date added</option>
@@ -48,7 +48,7 @@ export default function SortControls({ field, dir, bucket, onChange }: Props) {
           onChange={(e) =>
             onChange({ field, dir, bucket: e.target.value as Bucket })
           }
-          className="glass-input py-1.5 text-sm w-full"
+          className="input py-1.5 text-sm w-full"
         >
           <option value="none">None</option>
           <option value="week">Week</option>

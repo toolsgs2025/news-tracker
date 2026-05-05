@@ -141,12 +141,13 @@ Given a URL and any context the user has already gathered (page title, meta desc
   "topic": short headline-style title (string, <= 110 chars),
   "description": 1-2 sentence neutral summary of the post/article,
   "occurred_at": YYYY-MM-DD date the event/post happened (best guess from context; null if unknown),
-  "keywords": array of 3-7 lowercase keywords/tags (no #, no spaces inside multi-word terms — use hyphens)
+  "keywords": array of 3-7 lowercase keywords/tags (no #, no spaces inside multi-word terms — use hyphens),
+  "companies": array of 0-5 lowercase domain names of companies/products mentioned in the content (e.g. "openai.com", "anthropic.com", "google.com", "meta.com"). Use the official root domain only — no protocol, no path, no subdomain. Empty array [] if none clearly identified.
 }
 
 Rules:
 - Output ONLY the JSON object. No prose, no code fences.
-- If unsure about a field, use null (or [] for keywords).
+- If unsure about a field, use null (or [] for arrays).
 - Never invent facts that are not in the context.`;
 
 function safeJsonExtract(text: string): unknown {
@@ -218,6 +219,7 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
     description?: string | null;
     occurred_at?: string | null;
     keywords?: unknown;
+    companies?: unknown;
   };
   try {
     parsed = safeJsonExtract(text) as typeof parsed;
@@ -227,6 +229,7 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
       description: ctx.description,
       occurred_at: ctx.ogPublished ? ctx.ogPublished.slice(0, 10) : null,
       keywords: [],
+      companies: [],
       source_type: source,
       ai_raw: { error: "parse_failed", raw: text },
     };
@@ -240,6 +243,21 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
         .slice(0, 10)
     : [];
 
+  const companies = Array.isArray(parsed.companies)
+    ? (parsed.companies as unknown[])
+        .filter((c): c is string => typeof c === "string")
+        .map((c) =>
+          c
+            .toLowerCase()
+            .replace(/^https?:\/\//, "")
+            .replace(/^www\./, "")
+            .split("/")[0]
+            .trim()
+        )
+        .filter((c) => /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(c))
+        .slice(0, 6)
+    : [];
+
   const occurred =
     typeof parsed.occurred_at === "string" &&
     /^\d{4}-\d{2}-\d{2}$/.test(parsed.occurred_at)
@@ -251,6 +269,7 @@ export async function extractFromUrl(url: string): Promise<ExtractResult> {
     description: parsed.description ?? ctx.description ?? null,
     occurred_at: occurred,
     keywords,
+    companies,
     source_type: source,
     ai_raw: { context: ctx, model_output: text },
   };

@@ -95,6 +95,28 @@ export default function NichePage({
 
   async function handleSubmit(url: string) {
     if (!niche) return;
+
+    // Duplicate check (same URL in same niche)
+    const { data: existing } = await sb
+      .from("entries")
+      .select("id, occurred_at, created_at, researcher")
+      .eq("niche_id", niche.id)
+      .eq("url", url)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      const dup = existing[0] as {
+        occurred_at: string | null;
+        created_at: string;
+        researcher: string | null;
+      };
+      const when = (dup.occurred_at ?? dup.created_at).slice(0, 10);
+      const who = dup.researcher ? ` by ${dup.researcher}` : "";
+      const proceed = confirm(
+        `⚠️ Already added on ${when}${who}.\n\nClick OK to add it again anyway, or Cancel to skip.`
+      );
+      if (!proceed) return;
+    }
+
     const res = await fetch("/api/extract", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -112,8 +134,10 @@ export default function NichePage({
       url,
       topic: result.topic,
       description: result.description,
-      occurred_at: result.occurred_at,
+      // Fall back to today when AI couldn't infer the date (common for IG, blogs)
+      occurred_at: result.occurred_at ?? todayIso(),
       keywords: result.keywords,
+      companies: result.companies ?? [],
       status_id: defaultStatus?.id ?? null,
       source_type: result.source_type,
       researcher,
@@ -234,7 +258,7 @@ export default function NichePage({
   if (loading) {
     return (
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-        <div className="glass p-6 text-dim">Loading {slug}…</div>
+        <div className="card p-6 text-dim">Loading {slug}…</div>
       </main>
     );
   }
@@ -242,7 +266,7 @@ export default function NichePage({
   if (notFound) {
     return (
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-        <div className="glass p-6">
+        <div className="card p-6">
           <h1 className="text-xl font-semibold mb-2">Niche not found</h1>
           <p className="text-dim mb-4">
             No niche with slug <code>{slug}</code>.
@@ -257,7 +281,10 @@ export default function NichePage({
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
-      <aside className="lg:w-72 lg:shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto p-3 lg:border-r lg:border-white/10 flex flex-col gap-3">
+      <aside
+        className="lg:w-72 lg:shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto p-3 lg:border-r flex flex-col gap-3"
+        style={{ borderColor: "rgb(var(--border) / var(--border-a))" }}
+      >
         <div className="flex items-center justify-between gap-2">
           <Link href="/" className="btn-ghost text-xs">
             ← All niches
@@ -275,7 +302,7 @@ export default function NichePage({
           </div>
         )}
 
-        <div className="glass p-3">
+        <div className="card p-3">
           <FilterBar
             entries={entries}
             statuses={statuses}
@@ -284,7 +311,7 @@ export default function NichePage({
           />
         </div>
 
-        <div className="glass p-3">
+        <div className="card p-3">
           <SortControls
             field={sortField}
             dir={sortDir}
@@ -307,12 +334,12 @@ export default function NichePage({
 
       <section className="flex-1 min-w-0 p-3 lg:p-4 space-y-3">
         {error && (
-          <div className="glass p-3 text-sm text-red-300">{error}</div>
+          <div className="card p-3 text-sm text-red-300">{error}</div>
         )}
 
         <UrlInputBox onSubmit={handleSubmit} />
 
-        <div className="glass p-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="card p-2 flex flex-wrap items-center justify-between gap-2">
           <div className="text-sm text-dim px-1">
             {filterActive
               ? `${rows.length} of ${entries.length} entries`
@@ -325,7 +352,7 @@ export default function NichePage({
               className="btn-ghost text-sm"
               title="Copy filtered rows as TSV — paste into a Google Sheet"
             >
-              📋 Copy for Sheets
+              Copy for Sheets
             </button>
             <button
               onClick={exportCsv}
@@ -333,7 +360,7 @@ export default function NichePage({
               className="btn-primary text-sm"
               title="Download filtered rows as CSV"
             >
-              ⬇ Export CSV
+              Export CSV
             </button>
           </div>
         </div>

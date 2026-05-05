@@ -9,14 +9,11 @@ const config: Config = {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
-        glass: {
-          DEFAULT: "rgb(var(--glass-bg) / <alpha-value>)",
-          border: "rgb(var(--glass-border) / <alpha-value>)",
-        },
-      },
-      backgroundImage: {
-        "app-gradient":
-          "radial-gradient(circle at 15% 10%, rgb(var(--accent-1) / 0.45), transparent 45%), radial-gradient(circle at 85% 90%, rgb(var(--accent-2) / 0.45), transparent 45%), linear-gradient(135deg, rgb(var(--bg-from)), rgb(var(--bg-to)))",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        "google-red": "rgb(var(--google-red) / <alpha-value>)",
+        "google-yellow": "rgb(var(--google-yellow) / <alpha-value>)",
+        "google-green": "rgb(var(--google-green) / <alpha-value>)",
       },
     },
   },
@@ -24,3 +21,4 @@ const config: Config = {
 };
 
 export default config;
+
